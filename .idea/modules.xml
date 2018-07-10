@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent.iml" filepath="$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent_main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent_main.iml" group="com.exactpro.db_agent" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent_test.iml" filepath="$PROJECT_DIR$/.idea/modules/com.exactpro.db_agent_test.iml" group="com.exactpro.db_agent" />
+    </modules>
+  </component>
+</project>
