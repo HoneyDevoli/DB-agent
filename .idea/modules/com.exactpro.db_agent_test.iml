@@ -9,6 +9,7 @@
     <orderEntry type="module" module-name="com.exactpro.db_agent_main" />
     <orderEntry type="library" name="Gradle: postgresql:postgresql:9.0-801.jdbc4" level="project" />
     <orderEntry type="library" name="Gradle: mysql:mysql-connector-java:5.1.6" level="project" />
+    <orderEntry type="library" name="Gradle: log4j:log4j:1.2.16" level="project" />
   </component>
   <component name="TestModuleProperties" production-module="com.exactpro.db_agent_main" />
 </module>
