@@ -1,24 +1,23 @@
 import config.AgentData;
-import config.ConfigDB;
+import config.DBConnector;
 import org.apache.log4j.*;
-import org.apache.log4j.varia.NullAppender;
-import sun.rmi.runtime.Log;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 
 class Main {
-    private static final String CLASS_NAME = ConfigDB.class.getName();
+    private static final String CLASS_NAME = DBConnector.class.getName();
     private static final Logger logger = Logger.getLogger(CLASS_NAME);
 
     public static void main(String[] args) {
-        String agentProp,log4jProp;
-        if(args.length < 2){
+        String agentProp, log4jProp;
+        if (args.length < 2) {
             logger.fatal("Invalid arguments. Cannot load properties files");
         } else {
             agentProp = args[0];
@@ -28,15 +27,30 @@ class Main {
             initAgentProperty(agentProp);
         }
 
+        //test
         initAgentProperty("src/main/resources/agent.properties");
-        ConfigDB.testConnectionToDB();
+        try {
+            DBConnector.testConnectionToDB();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-        AgentData config = AgentData.getAgentData();
-        logger.info(config.getInnerPassword());
 
+        new Thread() {
+            public void run() {
+                try {
+                    while (true) {
+                        System.out.println("Server: " + "kek");
+                        AgentData agentData = AgentData.getAgentData();
+                        sleep(agentData.getInterval());
 
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.run();
     }
-
     private static void initAgentProperty(String path){
         FileInputStream fis;
         Properties property = new Properties();
@@ -69,3 +83,4 @@ class Main {
         }
     }
 }
+
