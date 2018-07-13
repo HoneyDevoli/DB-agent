@@ -1,6 +1,10 @@
 import config.AgentData;
 import config.DBConnector;
+import entity.PeopleEX;
+import entity.PeopleIN;
 import org.apache.log4j.*;
+import repository.PeopleEXRepository;
+import repository.PeopleINRepository;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,11 +12,15 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
+import static java.lang.System.exit;
+
 class Main {
-    private static final String CLASS_NAME = DBConnector.class.getName();
+    private static final String CLASS_NAME = Main.class.getName();
     private static final Logger logger = Logger.getLogger(CLASS_NAME);
 
     public static void main(String[] args) {
@@ -27,7 +35,7 @@ class Main {
             initAgentProperty(agentProp);
         }
 
-        //test
+        //test load data
         initAgentProperty("src/main/resources/agent.properties");
         try {
             DBConnector.testConnectionToDB();
@@ -35,22 +43,48 @@ class Main {
             e.printStackTrace();
         }
 
+        //test changes date from db
+        AgentData config = AgentData.getAgentData();
 
-        new Thread() {
-            public void run() {
-                try {
-                    while (true) {
-                        System.out.println("Server: " + "kek");
-                        AgentData agentData = AgentData.getAgentData();
-                        sleep(agentData.getInterval());
+        Date lastDateFromDb = PeopleINRepository.selectMaxDateForAgent(config.getIdAgent());
+        if(lastDateFromDb != null && lastDateFromDb.before(config.getStartDate())) {
+            config.setStartDate(config.getStartDate());
+        } else {
+            config.setStartDate(lastDateFromDb);
+        }
 
+
+        while (true) {
+            try {
+                logger.info("Start check database");
+                    ArrayList<PeopleEX> people = PeopleEXRepository.getPeople(AgentData.getAgentData().getStartDate());
+                    for(PeopleEX man : people) {
+                        if(man.isArrival()){
+                            if(PeopleINRepository.checkPeople(man.getFirstName(),man.getSecondName(),config.getIdAgent())){
+                                PeopleINRepository.updPeople(man.getFirstName(),man.getSecondName(),config.getIdAgent(),man.getColorHair(),man.getDateEvent());
+                            } else {
+                                PeopleINRepository.addPeople(man.getFirstName(),man.getSecondName(),config.getIdAgent(),man.getColorHair(),man.getDateEvent());
+                            }
+                        } else{
+                            PeopleINRepository.delPeople(man.getFirstName(),man.getSecondName(),config.getIdAgent());
+                        }
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    //logger.info(PeopleINRepository.checkPeople("EMMA","STONE", "ASD"));
+                    //PeopleINRepository.addPeople("Lilly","Abdulina","ASD","Black",Date.from(Instant.now()));
+                    logger.info("Set new date:");
+                    config.setStartDate(PeopleINRepository.selectMaxDateForAgent("ASD"));
+
+
+                Thread.sleep(config.getInterval() * 1000);
+                //logger.info("kek");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        }.run();
+        }
     }
+
     private static void initAgentProperty(String path){
         FileInputStream fis;
         Properties property = new Properties();
@@ -71,13 +105,14 @@ class Main {
             config.setIdAgent(property.getProperty("idAgent"));
 
             try {
-                Date startDate =new SimpleDateFormat("dd.MM.yyyy").parse(property.getProperty("startDate"));
+                Date startDate =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(property.getProperty("startDate"));
                 config.setStartDate(startDate);
             } catch (ParseException e) {
                 logger.error("Error parse date from config file");
             }
         } catch (FileNotFoundException e) {
             logger.fatal("File agent properties not found",e);
+            System.exit(0);
         } catch (IOException e) {
             logger.error(e);
         }

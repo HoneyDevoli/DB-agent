@@ -1,4 +1,5 @@
 CREATE DATABASE internal_people_db;
+\CONNECT internal_people_db
 CREATE TABLE people_in_town
         (changed_datetime     timestamp NOT NULL,
          first_name     text    NOT NULL,
@@ -8,6 +9,7 @@ CREATE TABLE people_in_town
          PRIMARY KEY (first_name, second_name, agent_id));
 
  CREATE DATABASE external_people_db;
+ CONNECT external_people_db
  CREATE TABLE people
          (date_event     timestamp NOT NULL,
          first_name     text    NOT NULL,
