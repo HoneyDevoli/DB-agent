@@ -21,7 +21,7 @@ public class DBConnector {
 
         con = getConnectionToOuterDB();
         if(con != null) {
-            logger.info("You successfully connected to external db");
+            logger.info("You successfully connected to external db\n");
             con.close();
         }
 
@@ -36,7 +36,7 @@ public class DBConnector {
             connection = DriverManager.getConnection(agentData.getInnerDbURL(), agentData.getInnerUser(), agentData.getInnerPassword());
             return connection;
         } catch (SQLException e) {
-            logger.error("Failed to make connection to Outer DateBase. Please check properties", e);
+            logger.error("Failed to make connection to Inner DateBase. Please check properties", e);
         }
         return connection;
     }

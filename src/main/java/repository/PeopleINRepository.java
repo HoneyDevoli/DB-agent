@@ -23,10 +23,9 @@ public class PeopleINRepository {
             statement.setString(2, secondName);
             statement.setString(3, agentId);
 
-            logger.info(String.format("Check people with name  %s %s .....", firstName, secondName));
+           //logger.info(String.format("Check people with name  %s %s .....", firstName, secondName));
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
-                logger.info(String.format("People with name  %s %s was in database .", firstName, secondName));
                 return true;
             }
         } catch (SQLException e) {
@@ -103,8 +102,14 @@ public class PeopleINRepository {
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 Timestamp lastDate = rs.getTimestamp("MAX_DATE");
+                if(lastDate != null) {
+                    int nanos = lastDate.getNanos() / 1000000;
+                    nanos++;
+                    nanos = nanos * 1000000;
+                    lastDate.setNanos(nanos);
+                }
 
-                logger.info("Last date event " + lastDate);
+                logger.info("Last date event is " + lastDate);
                 return lastDate;
             }
 
