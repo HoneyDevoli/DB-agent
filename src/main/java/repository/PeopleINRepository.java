@@ -6,6 +6,7 @@ import entity.PeopleEX;
 import org.apache.log4j.Logger;
 
 import java.sql.*;
+import java.util.Date;
 import java.util.List;
 
 public class PeopleINRepository {
@@ -101,7 +102,7 @@ public class PeopleINRepository {
         return null;
     }
 
-    public static void divisionPeople(List<PeopleEX> people) {
+    public static void divisionPeople(List<PeopleEX> people) throws SQLException {
 
         AgentData config = AgentData.getAgentData();
         try (Connection connection = DBConnector.getConnectionToInnerDB()) {
@@ -123,13 +124,11 @@ public class PeopleINRepository {
             resetCounts();
 
             if (people.size() > 0) {
-                config.setStartDate(selectMaxDateForAgent(config.getIdAgent()));
+                config.setStartDate(people.stream().map(man -> man.getDateEvent()).max(Date::compareTo).get());
                 logger.info("Set new date: " + config.getStartDate());
             } else {
                 logger.info("New people in external database not found.");
             }
-        } catch (SQLException e) {
-            logger.error(e);
         }
     }
 

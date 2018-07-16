@@ -42,11 +42,9 @@ class Main {
     }
 
     private static void initAgentProperty(String path) {
-        FileInputStream fis;
         Properties property = new Properties();
         AgentData config = AgentData.getAgentData();
-        try {
-            fis = new FileInputStream(path);
+        try (FileInputStream fis = new FileInputStream(path);){
             property.load(fis);
 
             config.setInnerDbURL(property.getProperty("db.urlIN"));
@@ -63,7 +61,7 @@ class Main {
             Date startDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(property.getProperty("startDate"));
             config.setStartDate(startDate);
 
-            fis.close();
+
         } catch (FileNotFoundException e) {
             logger.fatal("File agent properties not found", e);
             System.exit(1);
@@ -72,6 +70,7 @@ class Main {
             System.exit(1);
         } catch (IOException e) {
             logger.error(e);
+            System.exit(1);
         }
     }
 
@@ -84,12 +83,21 @@ class Main {
             public void run() {
                 logger.info("Start check database...");
 
-                List <PeopleEX> people= PeopleEXRepository.getPeople(config.getStartDate());
-//                if(people.size() == 0){
-//                    logger.error("db is unavailable");
-//                    return;
-//                }
-                PeopleINRepository.divisionPeople(people);
+                List <PeopleEX> people= null;
+                try {
+                    people = PeopleEXRepository.getPeople(config.getStartDate());
+                } catch (SQLException e) {
+                    logger.error("SQL execute error or external database is unavailable.",e);
+                    return;
+                }
+
+                try {
+                    PeopleINRepository.divisionPeople(people);
+                } catch (SQLException e) {
+                    logger.error("SQL execute error or internal database is unavailable.",e);
+                    //TODO реализовать накопление данных, сохранение полученных людей и замена стартовой датыю
+                    return;
+                }
 
                 logger.info("Stop check database.\n");
             }
