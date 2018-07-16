@@ -94,7 +94,7 @@ public class PeopleINRepository {
                     lastDate.setNanos(nanos);
                 }
 
-                logger.info("Last date event is " + lastDate);
+                logger.debug("Last date event is " + lastDate);
                 statement.close();
                 return lastDate;
             }
@@ -118,31 +118,37 @@ public class PeopleINRepository {
                         delPeople(connection, man, config.getIdAgent());
                     }
                 }
+                executeBatches(10);
             }
-            executeBatches();
-            logger.info(String.format("people was added %d, deleted %d updated %d", countAdd, countDel, countUpd));
-            resetCounts();
+            executeBatches(0);
+
 
             if (people.size() > 0) {
                 config.setStartDate(people.stream().map(man -> man.getDateEvent()).max(Date::compareTo).get());
-                logger.info("Set new date: " + config.getStartDate());
+                logger.debug("Set new date: " + config.getStartDate());
             } else {
                 logger.info("New people in external database not found.");
             }
         }
     }
 
-    private static void executeBatches() throws SQLException {
-        if(countAdd > 0) {
+    private static void executeBatches(int countToExecute) throws SQLException {
+        if(countAdd > countToExecute) {
             executeBatch(addStatement);
+            logger.trace(String.format("%d people was added.", countAdd));
+            countAdd = 0;
         }
 
-        if(countDel > 0) {
+        if(countDel > countToExecute) {
             executeBatch(delStatement);
+            logger.trace(String.format("%d people was deleted.",countDel));
+            countDel = 0;
         }
 
-        if(countUpd > 0) {
+        if(countUpd > countToExecute) {
             executeBatch(updStatement);
+            logger.trace(String.format("%d people was updated.",countUpd));
+            countUpd = 0;
         }
     }
 
@@ -150,12 +156,6 @@ public class PeopleINRepository {
         statement.executeBatch();
         statement.clearBatch();
         statement.close();
-    }
-
-    private static void resetCounts(){
-        countDel = 0;
-        countAdd = 0;
-        countUpd = 0;
     }
 }
 

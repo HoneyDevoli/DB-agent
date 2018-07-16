@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.List;
 
 public class PeopleEXRepository {
-    private static final Logger logger = Logger.getLogger(PeopleEXRepository.class);
 
     public static List<PeopleEX> getPeople(Date date) throws SQLException {
         String selectTableSQL = "SELECT DATE_EVENT, FIRST_NAME, IS_ARRIVAL, SECOND_NAME, COLOR_HAIR FROM people" +

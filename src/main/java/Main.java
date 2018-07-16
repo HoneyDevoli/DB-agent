@@ -15,6 +15,7 @@ import java.util.*;
 
 class Main {
     private static final Logger logger = Logger.getLogger(Main.class);
+    private static List<PeopleEX> peopleOld = new ArrayList<>();
 
     public static void main(String[] args) {
         String agentProp, log4jProp;
@@ -66,10 +67,10 @@ class Main {
             logger.fatal("File agent properties not found", e);
             System.exit(1);
         } catch (ParseException e) {
-            logger.error("Error parse date from config file");
+            logger.fatal("Error parse date from config file");
             System.exit(1);
         } catch (IOException e) {
-            logger.error(e);
+            logger.fatal(e);
             System.exit(1);
         }
     }
@@ -92,10 +93,17 @@ class Main {
                 }
 
                 try {
-                    PeopleINRepository.divisionPeople(people);
+                    if(peopleOld.size() > 0) {
+                        peopleOld.addAll(people);
+                        PeopleINRepository.divisionPeople(peopleOld);
+                        peopleOld.clear();
+                    } else {
+                        PeopleINRepository.divisionPeople(people);
+                    }
                 } catch (SQLException e) {
                     logger.error("SQL execute error or internal database is unavailable.",e);
-                    //TODO реализовать накопление данных, сохранение полученных людей и замена стартовой датыю
+                    peopleOld.addAll(people);
+                    config.setStartDate(people.stream().map(man -> man.getDateEvent()).max(Date::compareTo).get());
                     return;
                 }
 
@@ -117,9 +125,9 @@ class Main {
 
         if (lastDateFromDb != null && lastDateFromDb.after(config.getStartDate())) {
             config.setStartDate(lastDateFromDb);
-            logger.info("Set new date from data base file " + config.getStartDate());
+            logger.debug("Set new date from data base file " + config.getStartDate());
         } else {
-            logger.info("Start date from properties file " + config.getStartDate());
+            logger.debug("Start date from properties file " + config.getStartDate());
         }
     }
 }
