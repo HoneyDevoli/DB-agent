@@ -12,17 +12,16 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class PeopleEXRepository {
-    private static final String CLASS_NAME = PeopleEXRepository.class.getName();
-    private static final Logger logger = Logger.getLogger(CLASS_NAME);
+    private static final Logger logger = Logger.getLogger(PeopleEXRepository.class);
 
     public static ArrayList<PeopleEX> getPeople(Date date) {
-        PreparedStatement statement = null;
         String selectTableSQL = "SELECT DATE_EVENT, FIRST_NAME, IS_ARRIVAL, SECOND_NAME, COLOR_HAIR FROM people" +
                 " WHERE DATE_EVENT > ?;";
         ArrayList<PeopleEX> people = new ArrayList();
 
-        try (Connection connection = DBConnector.getConnectionToOuterDB()){
-            statement = connection.prepareStatement(selectTableSQL);
+        try (Connection connection = DBConnector.getConnectionToOuterDB();
+             PreparedStatement statement = connection.prepareStatement(selectTableSQL)){
+
             statement.setTimestamp(1, new java.sql.Timestamp(date.getTime()));
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
@@ -35,9 +34,6 @@ public class PeopleEXRepository {
                 people.add(newPeople);
             }
         } catch (SQLException e) {
-            logger.error(e);
-
-        } catch (NullPointerException e){
             logger.error(e);
         }
         return people;

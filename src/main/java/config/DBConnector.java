@@ -8,51 +8,44 @@ import java.sql.SQLException;
 
 public class DBConnector {
 
-    private static final String CLASS_NAME = DBConnector.class.getName();
-    private static final Logger logger = Logger.getLogger(CLASS_NAME);
+    private static final Logger logger = Logger.getLogger(DBConnector.class);
 
-    public static void testConnectionToDB() throws SQLException {
+    public static void testConnectionToDB()  {
         logger.info("Testing connection to JDBC");
-        Connection con = getConnectionToInnerDB();
-        if(con != null) {
-            logger.info("You successfully connected to internal db");
-            con.close();
-        }
-
-        con = getConnectionToOuterDB();
-        if(con != null) {
-            logger.info("You successfully connected to external db\n");
-            con.close();
-        }
-
-
-    }
-
-    public static Connection getConnectionToInnerDB() {
-        AgentData agentData = AgentData.getAgentData();
-        Connection connection = null;
-
+        Connection con = null;
         try {
-            connection = DriverManager.getConnection(agentData.getInnerDbURL(), agentData.getInnerUser(), agentData.getInnerPassword());
-            return connection;
+            con = getConnectionToInnerDB();
+            if (con != null) {
+                logger.info("You successfully connected to internal db");
+                con.close();
+            }
         } catch (SQLException e) {
-            logger.error("Failed to make connection to Inner DateBase. Please check properties", e);
+            logger.error("Failed to make connection to Inner DateBase. Please check properties");
         }
-        return connection;
+
+        try{
+            con = getConnectionToOuterDB();
+            if(con != null) {
+                logger.info("You successfully connected to external db\n");
+                con.close();
+            }
+        } catch (SQLException e){
+            logger.error("Failed to make connection to Outer DateBase. Please check properties");
+        }
+
+
     }
 
-    public static Connection getConnectionToOuterDB() {
+    public static Connection getConnectionToInnerDB() throws SQLException {
+        AgentData agentData = AgentData.getAgentData();
+        return DriverManager.getConnection(agentData.getInnerDbURL(), agentData.getInnerUser(), agentData.getInnerPassword());
+    }
+
+    public static Connection getConnectionToOuterDB() throws SQLException {
 
         AgentData agentData = AgentData.getAgentData();
-        Connection connection = null;
+        return DriverManager.getConnection(agentData.getOuterDbURL(),  agentData.getOuterUser(), agentData.getOuterPassword());
 
-        try {
-            connection = DriverManager.getConnection(agentData.getOuterDbURL(),  agentData.getOuterUser(), agentData.getOuterPassword());
-            return connection;
-        }  catch (SQLException e) {
-            logger.error("Failed to make connection to Outer DateBase. Please check properties", e);
-        }
-        return connection;
     }
 
 }

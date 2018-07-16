@@ -14,8 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 class Main {
-    private static final String CLASS_NAME = Main.class.getName();
-    private static final Logger logger = Logger.getLogger(CLASS_NAME);
+    private static final Logger logger = Logger.getLogger(Main.class);
 
     public static void main(String[] args) {
         String agentProp, log4jProp;
@@ -28,17 +27,15 @@ class Main {
             PropertyConfigurator.configure(log4jProp);
             initAgentProperty(agentProp);
 
+            DBConnector.testConnectionToDB();
+
             checkDate();
             checkDBTask();
         }
 
         //test load data
         initAgentProperty("src/main/resources/agent.properties");
-        try {
-            DBConnector.testConnectionToDB();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        DBConnector.testConnectionToDB();
 
         checkDate();
         checkDBTask();
@@ -63,14 +60,15 @@ class Main {
             config.setInterval(Integer.parseInt(property.getProperty("interval")));
             config.setIdAgent(property.getProperty("idAgent"));
 
-            try {
-                Date startDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(property.getProperty("startDate"));
-                config.setStartDate(startDate);
-            } catch (ParseException e) {
-                logger.error("Error parse date from config file");
-            }
+            Date startDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(property.getProperty("startDate"));
+            config.setStartDate(startDate);
+
+            fis.close();
         } catch (FileNotFoundException e) {
             logger.fatal("File agent properties not found", e);
+            System.exit(1);
+        } catch (ParseException e) {
+            logger.error("Error parse date from config file");
             System.exit(1);
         } catch (IOException e) {
             logger.error(e);
@@ -86,29 +84,13 @@ class Main {
             public void run() {
                 logger.info("Start check database...");
 
-                ArrayList<PeopleEX> people = null;
-                people = PeopleEXRepository.getPeople(config.getStartDate());
+                List <PeopleEX> people= PeopleEXRepository.getPeople(config.getStartDate());
+//                if(people.size() == 0){
+//                    logger.error("db is unavailable");
+//                    return;
+//                }
+                PeopleINRepository.divisionPeople(people);
 
-                for (PeopleEX man : people) {
-                    if (man.isArrival()) {
-                        if (PeopleINRepository.checkPeople(man.getFirstName(), man.getSecondName(), config.getIdAgent())) {
-                            PeopleINRepository.updPeople(man.getFirstName(), man.getSecondName(), config.getIdAgent(), man.getColorHair(), man.getDateEvent());
-                        } else {
-                            PeopleINRepository.addPeople(man.getFirstName(), man.getSecondName(), config.getIdAgent(), man.getColorHair(), man.getDateEvent());
-                        }
-                    } else {
-                        if(PeopleINRepository.checkPeople(man.getFirstName(), man.getSecondName(), config.getIdAgent())) {
-                            PeopleINRepository.delPeople(man.getFirstName(), man.getSecondName(), config.getIdAgent());
-                        }
-                    }
-                }
-
-                if (people.size() > 0) {
-                    config.setStartDate(PeopleINRepository.selectMaxDateForAgent(config.getIdAgent()));
-                    logger.info("Set new date: " + config.getStartDate());
-                } else {
-                    logger.info("New people in external database not found.");
-                }
                 logger.info("Stop check database.\n");
             }
         };
@@ -118,9 +100,14 @@ class Main {
     private static void checkDate(){
         AgentData config = AgentData.getAgentData();
 
-        Date lastDateFromDb = PeopleINRepository.selectMaxDateForAgent(config.getIdAgent());
-        if (lastDateFromDb != null && lastDateFromDb.after(config.getStartDate())) {
+        Date lastDateFromDb = null;
+        try {
+            lastDateFromDb = PeopleINRepository.selectMaxDateForAgent(config.getIdAgent());
+        } catch (SQLException e) {
+           logger.error(e);
+        }
 
+        if (lastDateFromDb != null && lastDateFromDb.after(config.getStartDate())) {
             config.setStartDate(lastDateFromDb);
             logger.info("Set new date from data base file " + config.getStartDate());
         } else {
