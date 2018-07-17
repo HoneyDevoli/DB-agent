@@ -12,6 +12,12 @@ public class DBConnector {
 
     public static void testConnectionToDB()  {
         logger.info("Testing connection to JDBC");
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            logger.error(e);
+        }
+
         Connection con = null;
         try {
             con = getConnectionToInnerDB();

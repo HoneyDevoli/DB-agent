@@ -36,11 +36,11 @@ class Main {
         }
 
         //test load data without data from args.
-        initAgentProperty("src/main/resources/agent.properties");
-        DBConnector.testConnectionToDB();
-
-        checkDate();
-        checkDBTask();
+//        initAgentProperty("src/main/resources/agent.properties");
+//        DBConnector.testConnectionToDB();
+//
+//        checkDate();
+//        checkDBTask();
     }
 
     private static void initAgentProperty(String path) {
