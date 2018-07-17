@@ -12,10 +12,11 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Main {
     private static final Logger logger = Logger.getLogger(Main.class);
-    private static List<PeopleEX> peopleOld = new ArrayList<>();
+    private static Map<String,PeopleEX> peopleOld = new HashMap<>();
 
     public static void main(String[] args) {
         String agentProp, log4jProp;
@@ -34,7 +35,7 @@ class Main {
             checkDBTask();
         }
 
-        //test load data
+        //test load data without data from args.
         initAgentProperty("src/main/resources/agent.properties");
         DBConnector.testConnectionToDB();
 
@@ -84,9 +85,9 @@ class Main {
             public void run() {
                 logger.info("Start check database...");
 
-                List <PeopleEX> people= null;
+                List <PeopleEX> peopleNew= null;
                 try {
-                    people = PeopleEXRepository.getPeople(config.getStartDate());
+                    peopleNew = PeopleEXRepository.getPeople(config.getStartDate());
                 } catch (SQLException e) {
                     logger.error("SQL execute error or external database is unavailable.",e);
                     return;
@@ -94,16 +95,18 @@ class Main {
 
                 try {
                     if(peopleOld.size() > 0) {
-                        peopleOld.addAll(people);
-                        PeopleINRepository.divisionPeople(peopleOld);
+                        if(peopleNew.size()>0) {
+                            peopleOld = appendPeople(peopleOld, peopleNew);
+                        }
+                        PeopleINRepository.divisionPeople(new ArrayList<>(peopleOld.values()));
                         peopleOld.clear();
                     } else {
-                        PeopleINRepository.divisionPeople(people);
+                        PeopleINRepository.divisionPeople(peopleNew);
                     }
                 } catch (SQLException e) {
                     logger.error("SQL execute error or internal database is unavailable.",e);
-                    peopleOld.addAll(people);
-                    config.setStartDate(people.stream().map(man -> man.getDateEvent()).max(Date::compareTo).get());
+                    peopleOld = appendPeople(peopleOld,peopleNew);
+                    config.setStartDate(peopleNew.stream().map(man -> man.getDateEvent()).max(Date::compareTo).get());
                     return;
                 }
 
@@ -111,6 +114,23 @@ class Main {
             }
         };
         timer.schedule(task, 0,config.getInterval() * 1000);
+    }
+
+    private static Map<String,PeopleEX> appendPeople(Map<String,PeopleEX> peopleOld, List<PeopleEX> peopleNew) {
+        if(peopleOld.size() == 0){
+            return  convertListToMap(peopleNew);
+        } else {
+            for(PeopleEX man : peopleNew){
+                String key = man.getFirstName()+man.getSecondName();
+                if(peopleOld.containsKey(key)){
+                    peopleOld.remove(key);
+                    peopleOld.put(key,man);
+                } else {
+                    peopleOld.put(key,man);
+                }
+            }
+            return peopleOld;
+        }
     }
 
     private static void checkDate(){
@@ -129,6 +149,11 @@ class Main {
         } else {
             logger.debug("Start date from properties file " + config.getStartDate());
         }
+    }
+
+    private static Map<String,PeopleEX> convertListToMap(List<PeopleEX> people){
+        return people.stream().collect(
+                Collectors.toMap(e -> e.getFirstName() + e.getSecondName(), e -> e));
     }
 }
 
